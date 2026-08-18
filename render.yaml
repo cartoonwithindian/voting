@@ -1,0 +1,77 @@
+services:
+  # Backend API Service
+  - type: web
+    name: voteweb-backend
+    runtime: node
+    plan: starter
+    rootDir: .
+    buildCommand: npm install
+    # Migrations run after build, before the server starts (Render's recommended
+    # spot for DB migrations). Idempotent: already-applied migrations are skipped.
+    preDeployCommand: npm run migrate
+    startCommand: node src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: voteweb-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: TOTP_ENCRYPTION_KEY
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: CORS_ORIGIN
+        # REQUIRED: set to the frontend URL (e.g. https://voteweb-frontend.onrender.com).
+        # You will be prompted for this value during blueprint creation.
+        sync: false
+      - key: FRONTEND_URL
+        # REQUIRED: set to the frontend URL (same value as CORS_ORIGIN).
+        sync: false
+      - key: DB_SSL
+        value: "true"
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+  # Frontend Service
+  - type: web
+    name: voteweb-frontend
+    runtime: node
+    plan: starter
+    rootDir: voteweb-Frontend
+    # --include=dev is required: Render builds with NODE_ENV=production, which
+    # otherwise skips devDependencies (typescript, tailwindcss, eslint) and
+    # breaks `next build`.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        # Backend's public origin (e.g. https://voteweb-backend.onrender.com).
+        # The frontend appends the /api/v1 prefix automatically.
+        fromService:
+          name: voteweb-backend
+          property: env
+          key: RENDER_EXTERNAL_URL
+      - key: NEXT_PUBLIC_APP_URL
+        # Frontend's own public origin.
+        fromService:
+          name: voteweb-frontend
+          property: env
+          key: RENDER_EXTERNAL_URL
+    autoDeploy: true
+
+  # PostgreSQL Database
+  # NOTE: "starter" is a legacy DB plan that can no longer be created.
+  # basic-256mb is the cheapest current paid plan (~$7/mo).
+  - type: database
+    name: voteweb-db
+    plan: basic-256mb
+    databaseName: voteweb
+    # Block all external connections; only internal (same-region) services connect.
+    ipAllowList: []
