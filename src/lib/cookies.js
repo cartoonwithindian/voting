@@ -20,7 +20,7 @@ function cookieOptions(httpOnly) {
   return {
     httpOnly,
     secure: config.cookieSecure,
-    sameSite: 'lax',
+    sameSite: config.cookieSameSite,
     path: '/',
     maxAge: httpOnly ? config.sessionTtlMs : 60 * 60 * 1000, // 1 hour for CSRF
   };
