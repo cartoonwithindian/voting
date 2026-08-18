@@ -54,7 +54,7 @@ router.get('/csrf', (req, res) => {
   res.cookie(CSRF_COOKIE, token, {
     httpOnly: false, // Must be readable by JavaScript for double-submit
     secure: config.cookieSecure,
-    sameSite: 'lax',
+    sameSite: config.cookieSameSite,
     path: '/',
     maxAge: 60 * 60 * 1000, // 1 hour
   });
