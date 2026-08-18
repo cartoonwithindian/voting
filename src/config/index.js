@@ -24,7 +24,9 @@ const config = {
   totpEncryptionKey: process.env.TOTP_ENCRYPTION_KEY || null,
 
   // Security - Cookies
-  cookieSecure: process.env.COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production',
+ // js
+  cookieSameSite: process.env.COOKIE_SAMESITE || 'lax',
+
 
   // Security - Rate Limiting
   maxLoginAttempts: 5,
